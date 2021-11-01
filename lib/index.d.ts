@@ -1,14 +1,14 @@
 import { DataSource } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
-import { Collection, FindOptions } from "mongodb";
+import { Collection, Document, FindOptions } from "mongodb";
 declare type DataSourceOperation = "findOne" | "find" | "count";
-export default class MongoDataSource implements DataSource {
+export default class MongoDataSource<TSchema extends Document = Document> implements DataSource {
     cache?: KeyValueCache<string> | undefined;
     context: any;
-    collection: Collection<Document>;
+    collection: Collection<TSchema>;
     cachePrefix: string;
     private pendingResults;
-    constructor(collection: Collection<Document>, cache?: KeyValueCache<string> | undefined);
+    constructor(collection: Collection<TSchema>, cache?: KeyValueCache<string> | undefined);
     initialize({ cache }: {
         context: any;
         cache: KeyValueCache;
@@ -19,11 +19,11 @@ export default class MongoDataSource implements DataSource {
     find(fields?: any, options?: {
         ttl: number;
         findOptions?: FindOptions<Document>;
-    }): Promise<any[]>;
+    }): Promise<TSchema[]>;
     findOne(fields?: any, options?: {
         ttl: number;
-        findOptions?: FindOptions<Document>;
-    }): Promise<any>;
+        findOptions?: FindOptions;
+    }): Promise<TSchema | null>;
     delete(type: DataSourceOperation, fields: any, options?: {
         findOptions?: FindOptions<Document>;
     }): Promise<boolean | void | undefined>;

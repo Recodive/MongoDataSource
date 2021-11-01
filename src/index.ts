@@ -1,18 +1,20 @@
 import { DataSource } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
-import { Collection, FindOptions } from "mongodb";
+import { Collection, Document, FindOptions } from "mongodb";
 
 type DataSourceOperation = "findOne" | "find" | "count";
 
-export default class MongoDataSource implements DataSource {
+export default class MongoDataSource<TSchema extends Document = Document>
+	implements DataSource
+{
 	context: any;
-	collection: Collection<Document>;
+	collection: Collection<TSchema>;
 
 	cachePrefix: string;
 
 	private pendingResults: { key: string; promise: Promise<any> }[] = [];
 
-	constructor(collection: Collection<Document>, public cache?: KeyValueCache) {
+	constructor(collection: Collection<TSchema>, public cache?: KeyValueCache) {
 		this.collection = collection;
 
 		this.cachePrefix = `mongo-${this.collection.dbName}-${this.collection.collectionName}-`;
@@ -42,7 +44,7 @@ export default class MongoDataSource implements DataSource {
 		options: { ttl: number; findOptions?: FindOptions<Document> } = {
 			ttl: 60
 		}
-	): Promise<any[]> {
+	): Promise<TSchema[]> {
 		const cacheKey = this.getCacheKey("find", fields, options),
 			cacheDoc = await this.cache?.get(cacheKey);
 
@@ -62,10 +64,10 @@ export default class MongoDataSource implements DataSource {
 
 	async findOne(
 		fields: any = {},
-		options: { ttl: number; findOptions?: FindOptions<Document> } = {
+		options: { ttl: number; findOptions?: FindOptions } = {
 			ttl: 60
 		}
-	) {
+	): Promise<TSchema | null> {
 		const cacheKey = this.getCacheKey("findOne", fields, options),
 			cacheDoc = await this.cache?.get(cacheKey);
 
@@ -84,7 +86,7 @@ export default class MongoDataSource implements DataSource {
 	async delete(
 		type: DataSourceOperation,
 		fields: any,
-		options: { findOptions?: FindOptions<Document> } = {}
+		options: { findOptions?: FindOptions } = {}
 	) {
 		return await this.cache?.delete(this.getCacheKey(type, fields, options));
 	}
@@ -92,7 +94,7 @@ export default class MongoDataSource implements DataSource {
 	private getCacheKey(
 		type: DataSourceOperation,
 		fields: any,
-		options: { findOptions?: FindOptions<Document> } = {}
+		options: { findOptions?: FindOptions } = {}
 	) {
 		return (
 			this.cachePrefix +
