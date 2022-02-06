@@ -7,24 +7,50 @@ type DataSourceOperation = "findOne" | "find" | "count";
 export default class MongoDataSource<TSchema extends Document = Document>
 	implements DataSource
 {
-	context: any;
-	collection: Collection<TSchema>;
-
-	cachePrefix: string;
+	/**
+	 * The prefix for the cache key
+	 * @default "mongodb"
+	 */
+	cachePrefix = "mongodb";
 
 	private pendingResults: { key: string; promise: Promise<any> }[] = [];
 
-	constructor(collection: Collection<TSchema>, public cache?: KeyValueCache) {
-		this.collection = collection;
+	private defaultTTL = 60;
 
-		this.cachePrefix = `mongo-${this.collection.dbName}-${this.collection.collectionName}-`;
+	constructor(
+		/**
+		 * MongoDB collection for the data source.
+		 */
+		public collection: Collection<TSchema>,
+		/**
+		 * Cache instance
+		 */
+		public cache?: KeyValueCache,
+		/**
+		 * Options for the DataSource
+		 */
+		options?: {
+			/**
+			 * The default TTL for the cache
+			 */
+			defaultTTL?: number;
+			/**
+			 * The prefix for the cache key
+			 */
+			cachePrefix?: string;
+		}
+	) {
+		this.cachePrefix = `${this.cachePrefix}-${this.collection.dbName}-${this.collection.collectionName}-`;
+
+		if (options?.defaultTTL) this.defaultTTL = options.defaultTTL;
+		if (options?.cachePrefix) this.cachePrefix = options.cachePrefix;
 	}
 
-	initialize({ cache }: { context: any; cache: KeyValueCache }) {
+	initialize({ cache }: { cache: KeyValueCache }) {
 		this.cache = cache;
 	}
 
-	async count(query: {} = {}, options = { ttl: 60 }) {
+	async count(query: {} = {}, options = { ttl: this.defaultTTL }) {
 		const cacheKey = this.getCacheKey("count", query),
 			cacheDoc = await this.cache?.get(cacheKey);
 		if (cacheDoc) return JSON.parse(cacheDoc);
@@ -42,7 +68,7 @@ export default class MongoDataSource<TSchema extends Document = Document>
 	async find(
 		fields: any = {},
 		options: { ttl: number; findOptions?: FindOptions<Document> } = {
-			ttl: 60
+			ttl: this.defaultTTL
 		}
 	): Promise<TSchema[]> {
 		const cacheKey = this.getCacheKey("find", fields, options),
@@ -54,7 +80,7 @@ export default class MongoDataSource<TSchema extends Document = Document>
 			const r = await this.collection
 				.find(fields, options.findOptions)
 				.toArray();
-			this.cache?.set(cacheKey, JSON.stringify(r), options);
+			await this.cache?.set(cacheKey, JSON.stringify(r), options);
 
 			return r;
 		});
@@ -65,7 +91,7 @@ export default class MongoDataSource<TSchema extends Document = Document>
 	async findOne(
 		fields: any = {},
 		options: { ttl: number; findOptions?: FindOptions } = {
-			ttl: 60
+			ttl: this.defaultTTL
 		}
 	): Promise<TSchema | null> {
 		const cacheKey = this.getCacheKey("findOne", fields, options),
@@ -75,7 +101,7 @@ export default class MongoDataSource<TSchema extends Document = Document>
 
 		const docs = await this.antiSpam(cacheKey, async () => {
 			const r = await this.collection.findOne(fields, options.findOptions);
-			this.cache?.set(cacheKey, JSON.stringify(r), options);
+			await this.cache?.set(cacheKey, JSON.stringify(r), options);
 
 			return r;
 		});
@@ -85,7 +111,7 @@ export default class MongoDataSource<TSchema extends Document = Document>
 
 	async delete(
 		type: DataSourceOperation,
-		fields: any,
+		fields: any = {},
 		options: { findOptions?: FindOptions } = {}
 	) {
 		return await this.cache?.delete(this.getCacheKey(type, fields, options));

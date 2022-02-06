@@ -3,14 +3,44 @@ import { KeyValueCache } from "apollo-server-caching";
 import { Collection, Document, FindOptions } from "mongodb";
 declare type DataSourceOperation = "findOne" | "find" | "count";
 export default class MongoDataSource<TSchema extends Document = Document> implements DataSource {
-    cache?: KeyValueCache<string> | undefined;
-    context: any;
+    /**
+     * MongoDB collection for the data source.
+     */
     collection: Collection<TSchema>;
+    /**
+     * Cache instance
+     */
+    cache?: KeyValueCache<string> | undefined;
+    /**
+     * The prefix for the cache key
+     * @default "mongodb"
+     */
     cachePrefix: string;
     private pendingResults;
-    constructor(collection: Collection<TSchema>, cache?: KeyValueCache<string> | undefined);
+    private defaultTTL;
+    constructor(
+    /**
+     * MongoDB collection for the data source.
+     */
+    collection: Collection<TSchema>, 
+    /**
+     * Cache instance
+     */
+    cache?: KeyValueCache<string> | undefined, 
+    /**
+     * Options for the DataSource
+     */
+    options?: {
+        /**
+         * The default TTL for the cache
+         */
+        defaultTTL?: number;
+        /**
+         * The prefix for the cache key
+         */
+        cachePrefix?: string;
+    });
     initialize({ cache }: {
-        context: any;
         cache: KeyValueCache;
     }): void;
     count(query?: {}, options?: {
@@ -24,8 +54,8 @@ export default class MongoDataSource<TSchema extends Document = Document> implem
         ttl: number;
         findOptions?: FindOptions;
     }): Promise<TSchema | null>;
-    delete(type: DataSourceOperation, fields: any, options?: {
-        findOptions?: FindOptions<Document>;
+    delete(type: DataSourceOperation, fields?: any, options?: {
+        findOptions?: FindOptions;
     }): Promise<boolean | void | undefined>;
     private getCacheKey;
     private antiSpam;
