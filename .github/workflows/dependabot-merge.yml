@@ -1,4 +1,7 @@
 name: CI Dependencies
+permissions:
+  pull-requests: write
+  contents: write
 on:
   workflow_run:
     workflows: ["CI"]
