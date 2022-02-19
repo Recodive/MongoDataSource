@@ -48,14 +48,14 @@ export default class MongoDataSource<TSchema extends Document = Document> implem
     }): Promise<any>;
     find(fields?: any, options?: {
         ttl: number;
-        findOptions?: FindOptions<Document>;
+        findOptions?: FindOptions<TSchema>;
     }): Promise<TSchema[]>;
     findOne(fields?: any, options?: {
         ttl: number;
-        findOptions?: FindOptions;
+        findOptions?: FindOptions<TSchema>;
     }): Promise<TSchema | null>;
     delete(type: DataSourceOperation, fields?: any, options?: {
-        findOptions?: FindOptions;
+        findOptions?: FindOptions<TSchema>;
     }): Promise<boolean | void | undefined>;
     private getCacheKey;
     private antiSpam;
