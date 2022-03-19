@@ -77,7 +77,7 @@ export default abstract class MongoDataSource<
 
 	async find(
 		fields: any = {},
-		options: { ttl: number; findOptions?: FindOptions<Document> } = {
+		options: { ttl: number; findOptions?: FindOptions<TSchema> } = {
 			ttl: this.defaultTTL
 		}
 	): Promise<TSchema[]> {
@@ -100,7 +100,7 @@ export default abstract class MongoDataSource<
 
 	async findOne(
 		fields: any = {},
-		options: { ttl: number; findOptions?: FindOptions } = {
+		options: { ttl: number; findOptions?: FindOptions<TSchema> } = {
 			ttl: this.defaultTTL
 		}
 	): Promise<TSchema | null> {
@@ -122,7 +122,7 @@ export default abstract class MongoDataSource<
 	async delete(
 		type: DataSourceOperation,
 		fields: any = {},
-		options: { findOptions?: FindOptions } = {}
+		options: { findOptions?: FindOptions<TSchema> } = {}
 	) {
 		return await this.cache?.delete(this.getCacheKey(type, fields, options));
 	}
@@ -130,7 +130,7 @@ export default abstract class MongoDataSource<
 	private getCacheKey(
 		type: DataSourceOperation,
 		fields: any,
-		options: { findOptions?: FindOptions } = {}
+		options: { findOptions?: FindOptions<TSchema> } = {}
 	) {
 		return (
 			this.cachePrefix +

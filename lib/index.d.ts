@@ -1,5 +1,6 @@
 import { DataSource, DataSourceConfig } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
+
 import type { Collection, Document, FindOptions } from "mongodb";
 declare type DataSourceOperation = "findOne" | "find" | "count";
 export default abstract class MongoDataSource<TSchema extends Document = Document, TContext = any> extends DataSource<TContext> {
@@ -26,11 +27,11 @@ export default abstract class MongoDataSource<TSchema extends Document = Documen
     /**
      * MongoDB collection for the data source.
      */
-    collection: Collection<TSchema>, 
+    collection: Collection<TSchema>,
     /**
      * Cache instance
      */
-    cache?: KeyValueCache<string> | undefined, 
+    cache?: KeyValueCache<string> | undefined,
     /**
      * Options for the DataSource
      */
