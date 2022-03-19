@@ -1,12 +1,19 @@
-import { DataSource } from "apollo-datasource";
+import { DataSource, DataSourceConfig } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
-import { Collection, Document, FindOptions } from "mongodb";
+
+import type { Collection, Document, FindOptions } from "mongodb";
 
 type DataSourceOperation = "findOne" | "find" | "count";
 
-export default class MongoDataSource<TSchema extends Document = Document>
-	implements DataSource
-{
+export default abstract class MongoDataSource<
+	TSchema extends Document = Document,
+	TContext = any
+> extends DataSource<TContext> {
+	/**
+	 * Request context
+	 */
+	context?: TContext;
+
 	/**
 	 * The prefix for the cache key
 	 * @default "mongodb"
@@ -40,14 +47,17 @@ export default class MongoDataSource<TSchema extends Document = Document>
 			cachePrefix?: string;
 		}
 	) {
+		super();
+
 		this.cachePrefix = `${this.cachePrefix}-${this.collection.dbName}-${this.collection.collectionName}-`;
 
 		if (options?.defaultTTL) this.defaultTTL = options.defaultTTL;
 		if (options?.cachePrefix) this.cachePrefix = options.cachePrefix;
 	}
 
-	initialize({ cache }: { cache: KeyValueCache }) {
+	initialize({ context, cache }: DataSourceConfig<TContext>) {
 		this.cache = cache;
+		this.context = context;
 	}
 
 	async count(query: {} = {}, options = { ttl: this.defaultTTL }) {
