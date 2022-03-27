@@ -1,7 +1,6 @@
 import { DataSource, DataSourceConfig } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
-
-import type { Collection, Document, FindOptions } from "mongodb";
+import type { Collection, Document, FindOptions, Sort, SortDirection } from "mongodb";
 declare type DataSourceOperation = "findOne" | "find" | "count";
 export default abstract class MongoDataSource<TSchema extends Document = Document, TContext = any> extends DataSource<TContext> {
     /**
@@ -27,11 +26,11 @@ export default abstract class MongoDataSource<TSchema extends Document = Documen
     /**
      * MongoDB collection for the data source.
      */
-    collection: Collection<TSchema>,
+    collection: Collection<TSchema>, 
     /**
      * Cache instance
      */
-    cache?: KeyValueCache<string> | undefined,
+    cache?: KeyValueCache<string> | undefined, 
     /**
      * Options for the DataSource
      */
@@ -51,14 +50,17 @@ export default abstract class MongoDataSource<TSchema extends Document = Documen
     }): Promise<any>;
     find(fields?: any, options?: {
         ttl: number;
-        findOptions?: FindOptions<Document>;
-    }): Promise<TSchema[]>;
+        findOptions?: FindOptions<TSchema>;
+    }, sort?: {
+        sort: Sort;
+        direction?: SortDirection;
+    }, skip?: number, limit?: number): Promise<TSchema[]>;
     findOne(fields?: any, options?: {
         ttl: number;
-        findOptions?: FindOptions;
+        findOptions?: FindOptions<TSchema>;
     }): Promise<TSchema | null>;
     delete(type: DataSourceOperation, fields?: any, options?: {
-        findOptions?: FindOptions;
+        findOptions?: FindOptions<TSchema>;
     }): Promise<boolean | void | undefined>;
     private getCacheKey;
     private antiSpam;

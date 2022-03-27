@@ -1,7 +1,13 @@
 import { DataSource, DataSourceConfig } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
 
-import type { Collection, Document, FindOptions } from "mongodb";
+import type {
+	Collection,
+	Document,
+	FindOptions,
+	Sort,
+	SortDirection
+} from "mongodb";
 
 type DataSourceOperation = "findOne" | "find" | "count";
 
@@ -79,17 +85,29 @@ export default abstract class MongoDataSource<
 		fields: any = {},
 		options: { ttl: number; findOptions?: FindOptions<TSchema> } = {
 			ttl: this.defaultTTL
-		}
+		},
+		sort?: { sort: Sort; direction?: SortDirection },
+		skip?: number,
+		limit?: number
 	): Promise<TSchema[]> {
-		const cacheKey = this.getCacheKey("find", fields, options),
+		const cacheKey = this.getCacheKey(
+				"find",
+				fields,
+				options,
+				sort,
+				skip,
+				limit
+			),
 			cacheDoc = await this.cache?.get(cacheKey);
 
 		if (cacheDoc) return JSON.parse(cacheDoc);
 
 		const docs = await this.antiSpam(cacheKey, async () => {
-			const r = await this.collection
-				.find(fields, options.findOptions)
-				.toArray();
+			const cursor = this.collection.find(fields, options.findOptions);
+			if (sort) cursor.sort(sort.sort, sort.direction);
+			if (skip) cursor.skip(skip);
+			if (limit) cursor.limit(limit);
+			const r = await cursor.toArray();
 			await this.cache?.set(cacheKey, JSON.stringify(r), options);
 
 			return r;
@@ -130,13 +148,19 @@ export default abstract class MongoDataSource<
 	private getCacheKey(
 		type: DataSourceOperation,
 		fields: any,
-		options: { findOptions?: FindOptions<TSchema> } = {}
+		options: { findOptions?: FindOptions<TSchema> } = {},
+		sort?: { sort: Sort; direction?: SortDirection },
+		skip?: number,
+		limit?: number
 	) {
 		return (
 			this.cachePrefix +
 			`${type}-` +
 			JSON.stringify(fields) +
-			(options.findOptions ? "-" + JSON.stringify(options.findOptions) : "")
+			(options.findOptions ? "-" + JSON.stringify(options.findOptions) : "") +
+			(sort ? "-" + JSON.stringify(sort) : "") +
+			(skip ? "-skip" + skip : "") +
+			(limit ? "-limit" + limit : "")
 		);
 	}
 
