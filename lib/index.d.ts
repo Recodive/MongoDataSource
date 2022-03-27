@@ -1,6 +1,6 @@
 import { DataSource, DataSourceConfig } from "apollo-datasource";
 import { KeyValueCache } from "apollo-server-caching";
-import type { Collection, Document, FindOptions, Sort, SortDirection } from "mongodb";
+import type { Collection, Document, Filter, FindOptions, Sort, SortDirection } from "mongodb";
 declare type DataSourceOperation = "findOne" | "find" | "count";
 export default abstract class MongoDataSource<TSchema extends Document = Document, TContext = any> extends DataSource<TContext> {
     /**
@@ -45,21 +45,21 @@ export default abstract class MongoDataSource<TSchema extends Document = Documen
         cachePrefix?: string;
     });
     initialize({ context, cache }: DataSourceConfig<TContext>): void;
-    count(query?: {}, options?: {
+    count(query?: Filter<TSchema>, options?: {
         ttl: number;
     }): Promise<any>;
-    find(fields?: any, options?: {
+    find(fields?: Filter<TSchema>, options?: {
         ttl: number;
         findOptions?: FindOptions<TSchema>;
     }, sort?: {
         sort: Sort;
         direction?: SortDirection;
     }, skip?: number, limit?: number): Promise<TSchema[]>;
-    findOne(fields?: any, options?: {
+    findOne(fields?: Filter<TSchema>, options?: {
         ttl: number;
         findOptions?: FindOptions<TSchema>;
     }): Promise<TSchema | null>;
-    delete(type: DataSourceOperation, fields?: any, options?: {
+    delete(type: DataSourceOperation, fields?: Filter<TSchema>, options?: {
         findOptions?: FindOptions<TSchema>;
     }): Promise<boolean | void | undefined>;
     private getCacheKey;
