@@ -4,6 +4,7 @@ import { KeyValueCache } from "apollo-server-caching";
 import type {
 	Collection,
 	Document,
+	Filter,
 	FindOptions,
 	Sort,
 	SortDirection
@@ -66,7 +67,7 @@ export default abstract class MongoDataSource<
 		this.context = context;
 	}
 
-	async count(query: {} = {}, options = { ttl: this.defaultTTL }) {
+	async count(query: Filter<TSchema> = {}, options = { ttl: this.defaultTTL }) {
 		const cacheKey = this.getCacheKey("count", query),
 			cacheDoc = await this.cache?.get(cacheKey);
 		if (cacheDoc) return JSON.parse(cacheDoc);
@@ -82,7 +83,7 @@ export default abstract class MongoDataSource<
 	}
 
 	async find(
-		fields: any = {},
+		fields: Filter<TSchema> = {},
 		options: { ttl: number; findOptions?: FindOptions<TSchema> } = {
 			ttl: this.defaultTTL
 		},
@@ -117,7 +118,7 @@ export default abstract class MongoDataSource<
 	}
 
 	async findOne(
-		fields: any = {},
+		fields: Filter<TSchema> = {},
 		options: { ttl: number; findOptions?: FindOptions<TSchema> } = {
 			ttl: this.defaultTTL
 		}
@@ -139,7 +140,7 @@ export default abstract class MongoDataSource<
 
 	async delete(
 		type: DataSourceOperation,
-		fields: any = {},
+		fields: Filter<TSchema> = {},
 		options: { findOptions?: FindOptions<TSchema> } = {}
 	) {
 		return await this.cache?.delete(this.getCacheKey(type, fields, options));
@@ -147,7 +148,7 @@ export default abstract class MongoDataSource<
 
 	private getCacheKey(
 		type: DataSourceOperation,
-		fields: any,
+		fields: Filter<TSchema>,
 		options: { findOptions?: FindOptions<TSchema> } = {},
 		sort?: { sort: Sort; direction?: SortDirection },
 		skip?: number,
