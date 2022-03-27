@@ -67,7 +67,10 @@ export default abstract class MongoDataSource<
 		this.context = context;
 	}
 
-	async count(query: Filter<TSchema> = {}, options = { ttl: this.defaultTTL }) {
+	async count(
+		query: Filter<TSchema> = {},
+		options = { ttl: this.defaultTTL }
+	): Promise<number> {
 		const cacheKey = this.getCacheKey("count", query),
 			cacheDoc = await this.cache?.get(cacheKey);
 		if (cacheDoc) return JSON.parse(cacheDoc);
@@ -105,9 +108,9 @@ export default abstract class MongoDataSource<
 
 		const docs = await this.antiSpam(cacheKey, async () => {
 			const cursor = this.collection.find(fields, options.findOptions);
-			if (sort) cursor.sort(sort.sort, sort.direction);
-			if (skip) cursor.skip(skip);
-			if (limit) cursor.limit(limit);
+			if (sort !== undefined) cursor.sort(sort.sort, sort.direction);
+			if (skip !== undefined) cursor.skip(skip);
+			if (limit !== undefined) cursor.limit(limit);
 			const r = await cursor.toArray();
 			await this.cache?.set(cacheKey, JSON.stringify(r), options);
 
