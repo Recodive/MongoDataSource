@@ -14,7 +14,7 @@
 	"dependencies": {
 		"apollo-datasource": "^3.3.1",
 		"apollo-server-caching": "^3.3.0",
-		"mongodb": "^4.4.1"
+		"mongodb": "^5.0.1"
 	},
 	"devDependencies": {
 		"typescript": "^4.6.2"
